@@ -93,26 +93,21 @@ def get_post_for_slack(class_id):
   else:
     slack_attachments = [
       common.make_piazza_attachment(clazz, class_id, post)
-        for post in posts
+        for annotation, post in posts
     ]
     data = {
       'response_type': 'in_channel',
       'username': flask.request.form['user_name'],
-      'text': common.apply_annotations(annotations, text, lambda annot, text: ''.join([
+      'text': common.apply_annotations(annotations, post_content, lambda annot, text: ''.join([
           '<',
           common.make_piazza_link(class_id, annot.post_id),
           '|',
           text,
           '>'
-        ]
+        ])),
       'attachments': slack_attachments
     }
-    r = requests.post(flask.request.form['response_url'], json=data)
-    try:
-      r.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-      raise SlackResponseException(e)
-    return ''
+    return flask.jsonify(data)
 
 
 if __name__ == '__main__':
