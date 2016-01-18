@@ -67,7 +67,8 @@ def post_message_with_piazza_links(sc, post_ids, user, channel):
     PIAZZA_NETWORK, PIAZZA_CLASS_ID, posts)
 
   sc.api_call('chat.postMessage', channel=channel, text=text,
-              attachments=json.dumps(piazza_attachments), as_user=True)
+              unfurl_links=False, attachments=json.dumps(piazza_attachments),
+              as_user=True)
 
 
 def _process_event(sc, event, my_id):
