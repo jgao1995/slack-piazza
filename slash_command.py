@@ -1,18 +1,20 @@
 import datetime
-import flask
 import functools
 import os
-import piazza_api
-import requests
 import subprocess
 import StringIO
+
+import flask
+import piazza_api
+import requests
 from werkzeug import exceptions
+
+import common
 
 import config
 
-USERNAME = config.username
-PASSWORD = config.password
-EXPECTED_SLACK_TOKEN = config.slack_token
+
+EXPECTED_SLACK_TOKEN = config.slash_command_expected_slack_token
 
 
 class Error(Exception):
@@ -31,7 +33,7 @@ class SlackResponseException(Error):
 
 def _init_piazza():
   p = piazza_api.Piazza()
-  p.user_login(email=USERNAME, password=PASSWORD)
+  p.user_login(email=config.piazza_username, password=config.piazza_password)
   return p
 
 
@@ -70,33 +72,8 @@ def slack_POST(f):
   return decorator
 
 
-def convert_html_to_markdown(text):
-  p = subprocess.Popen(['pandoc', '-f', 'html', '-t', 'markdown'],
-                       stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-  # ugh python text encoding problems
-  out, _ = p.communicate(text.encode('utf-8'))
-  return out
-
-
 def convert_post_to_slack_data(post, clazz, class_id):
-  latest = post['history'][0]
-  user = clazz.get_users([latest['uid']])[0]
-  content = convert_html_to_markdown(latest['content'])
-  slack_attachment = {
-    'fallback': 'Piazza post @{}'.format(post['nr']),
-    'pretext': 'Piazza post @{}'.format(post['nr']),
-    'author_name': user['name'] + (' (anonymous)' if latest['anon'] == 'stud' else ''),
-    # how do we convert get the actual image given by user['photo']
-    # 'author_icon': user['photo'],
-    'title': latest['subject'],
-    'title_link': 'https://www.piazza.com/{}?cid={}'.format(class_id, post['nr']),
-    'text': content,
-    'fields': [
-      {'title': 'created', 'value': latest['created'], 'short': True},
-      {'title': 'views', 'value': post['unique_views'], 'short': True},
-      {'title': 'tags', 'value': ', '.join(post['folders']) if post['folders'] else '(none)', 'short': True}
-    ]
-  }
+  slack_attachment = common.make_piazza_attachment(clazz, class_id, post)
   return {
     'response_type': 'in_channel',
     'attachments': [slack_attachment]
@@ -108,14 +85,18 @@ def convert_post_to_slack_data(post, clazz, class_id):
 def get_post_for_slack(class_id):
   clazz = PIAZZA.network(class_id)
   post_id = flask.request.form['text']
-  post = clazz.get_post(post_id)
-  data = convert_post_to_slack_data(post, clazz, class_id)
-  r = requests.post(flask.request.form['response_url'], json=data)
   try:
-    r.raise_for_status()
-  except requests.exceptions.HTTPError as e:
-    raise SlackResponseException(e)
-  return ''
+    post = clazz.get_post(post_id)
+  except piazza_api.exceptions.RequestError as e:
+    return e, 400
+  else:
+    data = convert_post_to_slack_data(post, clazz, class_id)
+    r = requests.post(flask.request.form['response_url'], json=data)
+    try:
+      r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+      raise SlackResponseException(e)
+    return ''
 
 
 if __name__ == '__main__':
