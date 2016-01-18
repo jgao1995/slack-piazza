@@ -32,7 +32,7 @@ def make_piazza_attachment(network, class_id, post):
     # how do we convert get the actual image given by user['photo']
     # 'author_icon': user['photo'],
     'title': latest['subject'],
-    'title_link': 'https://www.piazza.com/{}?cid={}'.format(class_id, post['nr']),
+    'title_link': 'https://www.piazza.com/class/{}?cid={}'.format(class_id, post['nr']),
     'text': content,
     'fields': [
       {'title': 'created', 'value': latest['created'], 'short': True},
