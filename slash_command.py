@@ -84,13 +84,29 @@ def convert_post_to_slack_data(post, clazz, class_id):
 @slack_POST
 def get_post_for_slack(class_id):
   clazz = PIAZZA.network(class_id)
-  post_id = flask.request.form['text']
+  post_content = flask.request.form['text']
+  annotations = common.annotate_piazza_post_mentions(post_content)
   try:
-    post = clazz.get_post(post_id)
+    posts = [(annotation, clazz.get_post(annotation.post_id)) for annotation in annotations]
   except piazza_api.exceptions.RequestError as e:
     return e, 400
   else:
-    data = convert_post_to_slack_data(post, clazz, class_id)
+    slack_attachments = [
+      common.make_piazza_attachment(clazz, class_id, post)
+        for post in posts
+    ]
+    data = {
+      'response_type': 'in_channel',
+      'username': flask.request.form['user_name'],
+      'text': common.apply_annotations(annotations, text, lambda annot, text: ''.join([
+          '<',
+          common.make_piazza_link(class_id, annot.post_id),
+          '|',
+          text,
+          '>'
+        ]
+      'attachments': slack_attachments
+    }
     r = requests.post(flask.request.form['response_url'], json=data)
     try:
       r.raise_for_status()
