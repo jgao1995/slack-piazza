@@ -8,7 +8,7 @@ _POST_ID_PATTERN = re.compile(r'(?:@|post\s+|followup\s+to\s+|Piazza\s+)(\d+)',
 
 
 def find_piazza_post_ids(text):
-  return (int(post_id) for post_id in _POST_ID_PATTERN.findall(text))
+  return [int(post_id) for post_id in _POST_ID_PATTERN.findall(text)]
 
 
 def convert_html_to_markdown(text):
