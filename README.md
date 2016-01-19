@@ -16,3 +16,17 @@ slack_bot_token = 'xoxb-XXXXXXXXXXXXXXXXX'
 # add this line to use `slash_command.py`
 slash_command_expected_slack_token = 'XXXXXXXXXXXXXXXXX'
 ```
+
+# Run the linker bot
+
+```
+python linker_bot.py
+```
+
+# Run the slash command listener
+
+```
+python slash_command.py
+```
+
+You can also pass `--help` for additional flags, like `--port N` and `--debug`
