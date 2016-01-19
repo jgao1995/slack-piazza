@@ -1,3 +1,4 @@
+'''A bot to post Slack messages with links to Piazza posts.'''
 import json
 import logging
 import re
@@ -90,7 +91,7 @@ def process_event(sc, event, my_id):
     logger.exception(e)
 
 
-def main():
+def main(interval=1):
   sc = MySlackClient(TOKEN)
   if sc.rtm_connect():
     r = sc.api_call('auth.test')
@@ -104,10 +105,20 @@ def main():
       events = sc.rtm_read()
       for event in events:
         process_event(sc, event, my_id)
-      time.sleep(1)
+      time.sleep(interval)
   else:
     sys.exit('Connection failed; invalid token?')
 
 
 if __name__ == '__main__':
-  main()
+  import argparse
+  parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument(
+    '--interval', type=float, default=1, metavar='N',
+    help=('The number of seconds (given as a floating-point number) to sleep '
+          'before polling the API endpoint again. Lower values than 1 may lead '
+          'to rate limiting errors.'))
+
+  args = parser.parse_args()
+
+  main(interval=args.interval)
