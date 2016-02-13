@@ -10,7 +10,7 @@ import requests
 from werkzeug import exceptions
 
 import common
-
+import json
 import config
 
 
@@ -91,7 +91,7 @@ def get_post_for_slack(class_id):
     return e, 400
   else:
     data = convert_post_to_slack_data(post, clazz, class_id)
-    r = requests.post(flask.request.form['response_url'], json=data)
+    r = requests.post(flask.request.form['response_url'], data=json.dumps(data))
     try:
       r.raise_for_status()
     except requests.exceptions.HTTPError as e:
