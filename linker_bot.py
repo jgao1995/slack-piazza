@@ -33,7 +33,7 @@ class MySlackClient(slackclient.SlackClient):
     super(MySlackClient, self).__init__(*args, **kwargs)
 
   def api_call(self, *args, **kwargs):
-    return json.loads(super(MySlackClient, self).api_call(*args, **kwargs))
+    return super(MySlackClient, self).api_call(*args, **kwargs)
 
 
 def post_message_with_piazza_links(sc, post_ids, user, channel):
